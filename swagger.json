@@ -1,0 +1,50 @@
+{
+    "swagger": "2.0",
+    "info": {
+      "version": "1.0.0",
+      "title": "Your API Title",
+      "description": "API Description"
+    },
+    "host": "localhost:3000",
+    "basePath": "/",
+    "tags": [
+      {
+        "name": "group1",
+        "description": "Description for group 1"
+      }
+    ],
+    "schemes": [
+      "http"
+    ],
+    "paths": {
+      "/endpoint1": {
+        "get": {
+          "tags": ["group1"],
+          "summary": "Get Endpoint 1",
+          "description": "Detailed description...",
+          "responses": {
+            "200": {
+              "description": "Successful operation",
+              "schema": {
+                "$ref": "#/definitions/Model1"
+              }
+            }
+          }
+        }
+      }
+    },
+    "definitions": {
+      "Model1": {
+        "type": "object",
+        "properties": {
+          "property1": {
+            "type": "string"
+          },
+          "property2": {
+            "type": "integer"
+          }
+        }
+      }
+    }
+  }
+  

@@ -1,6 +1,9 @@
 const express = require('express');
+const swaggerUi = require('swagger-ui-express');
+const swaggerDocument = require('./swagger.json');
 const app = express();
 
+app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerDocument));
 // GET API 엔드포인트 설정
 app.get('/api/users', (req, res) => {
   // 데이터베이스에서 사용자 목록을 가져오는 로직 또는 다른 작업을 수행합니다.
