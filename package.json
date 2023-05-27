@@ -1,0 +1,22 @@
+{
+  "name": "mapletalk",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/paul9590/MapleTalk.git"
+  },
+  "author": "pingmo",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/paul9590/MapleTalk/issues"
+  },
+  "homepage": "https://github.com/paul9590/MapleTalk#readme",
+  "dependencies": {
+    "express": "^4.18.2"
+  }
+}
