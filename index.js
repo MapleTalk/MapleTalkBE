@@ -1,21 +1,61 @@
 const express = require('express');
 const swaggerUi = require('swagger-ui-express');
 const swaggerDocument = require('./swagger.json');
+
+const admin = require('firebase-admin');
+const bodyParser = require('body-parser');
+const serviceAccount = require('./config/serviceAccountKey.json'); // 서비스 계정 키 파일 경로
+
+// Firebase Admin SDK 초기화
+admin.initializeApp({
+  credential: admin.credential.cert(serviceAccount),
+});
+
+// Firestore 인스턴스 생성
+const firestore = admin.firestore();
+
+// Express 앱 생성
 const app = express();
+app.use(bodyParser.json());
 
-app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerDocument));
-// GET API 엔드포인트 설정
-app.get('/api/users', (req, res) => {
-  // 데이터베이스에서 사용자 목록을 가져오는 로직 또는 다른 작업을 수행합니다.
-  // 예를 들어, 가상의 사용자 목록을 반환하는 경우:
-  const users = [
-    { id: 1, name: 'John Doe' },
-    { id: 2, name: 'Jane Smith' },
-    { id: 3, name: 'Bob Johnson' }
-  ];
+// GET API 엔드포인트 - 사용자 목록 가져오기
+app.get('/api/users', async (req, res) => {
+  try {
+    // Firestore 'users' 컬렉션에서 모든 문서 가져오기
+    const snapshot = await firestore.collection('users').get();
 
-  // 사용자 목록을 JSON 형식으로 반환합니다.
-  res.json(users);
+    // 문서 데이터 추출
+    const users = [];
+    snapshot.forEach((doc) => {
+      const userData = doc.data();
+      users.push(userData);
+    });
+
+    res.json(users);
+  } catch (error) {
+    console.error('Error fetching user data:', error);
+    res.status(500).json({ success: false, message: 'Error fetching user data' });
+  }
+});
+
+// POST API 엔드포인트 - 사용자 정보 저장
+app.post('/api/register', async (req, res) => {
+  try {
+    const { id, email, name } = req.body;
+
+    // Firestore 'users' 컬렉션에 새로운 문서 생성
+    const docRef = await firestore.collection('users').add({
+      id,
+      email,
+      name,
+    });
+
+    console.log('User data saved with ID:', docRef.id);
+    res.json({ success: true, message: 'User data saved' });
+  } catch (error) {
+    console.error('Error saving user data:', error);
+    res.status(500).json({ success: false, message: 'Error saving user data' });
+  }
 });
 
 // 서버 시작
