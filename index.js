@@ -19,10 +19,10 @@ const app = express();
 app.use(bodyParser.json());
 
 // GET API 엔드포인트 - 사용자 목록 가져오기
-app.get('/api/users', async (req, res) => {
+app.get('/api/test', async (req, res) => {
   try {
     // Firestore 'users' 컬렉션에서 모든 문서 가져오기
-    const snapshot = await firestore.collection('users').get();
+    const snapshot = await firestore.collection('test').get();
 
     // 문서 데이터 추출
     const users = [];
