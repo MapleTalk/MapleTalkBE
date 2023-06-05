@@ -1,0 +1,39 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>Test Chatbot</title>
+  </head>
+  <body>
+    <h1>Test Chatbot</h1>
+
+    <form method="GET" action="http://localhost:3002/chat">
+      <input type="text" name="message"/>
+      <button type="submit">Send</button>
+    </form>
+
+    <div id="response"></div>
+
+    <script>
+      const form = document.querySelector('form');
+      const responseDiv = document.getElementById('response');
+
+      form.addEventListener('submit', async (event) => {
+        event.preventDefault();
+        const formData = new FormData(form);
+        const message = formData.get('message');
+
+        const response = await fetch(`http://localhost:3002/chat?message=${message}`);
+        const data = await response.json();
+        const reply = data.reply;
+
+        // 개행 문자를 <br> 태그로 대체
+        const formattedReply = reply.replace(/(\d+)\s+층/g, '$1&nbsp;층');
+
+        // 공백을 &nbsp;로 변환
+        const finalReply = formattedReply.replace(/\n/g, '<br>');
+
+        responseDiv.innerHTML = finalReply;
+      });
+    </script>
+  </body>
+</html>
