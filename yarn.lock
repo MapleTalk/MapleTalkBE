@@ -386,7 +386,7 @@
   resolved "https://registry.npmjs.org/@firebase/webchannel-wrapper/-/webchannel-wrapper-0.10.1.tgz"
   integrity sha512-Dq5rYfEpdeel0bLVN+nfD1VWmzCkK+pJbSjIawGE+RY4+NIJqhbUDDQjvV0NUK84fMfwxvtFoCtEe70HfZjFcw==
 
-"@google-cloud/firestore@^6.5.0":
+"@google-cloud/firestore@^6.6.0":
   version "6.6.0"
   resolved "https://registry.npmjs.org/@google-cloud/firestore/-/firestore-6.6.0.tgz"
   integrity sha512-XDWsmCtQQFs0RoXZaq3fCYe4jRtAAFmW38ezGLKWSjLQ5FNv7jxpBGtdITBM2PDI0tFNCyeogjqsDbI6CIVeuQ==
@@ -1256,10 +1256,10 @@ finalhandler@1.2.0:
     statuses "2.0.1"
     unpipe "~1.0.0"
 
-firebase-admin@^11.8.0:
-  version "11.8.0"
-  resolved "https://registry.npmjs.org/firebase-admin/-/firebase-admin-11.8.0.tgz"
-  integrity sha512-RxO0wWDnuqVikXExhVjnhVaaXpziKCad4D1rOX5c1WJdk1jAu9hfE4rbrFKZQZgF1okZS04kgCBIFJro7xn8NQ==
+firebase-admin@^11.9.0:
+  version "11.9.0"
+  resolved "https://registry.npmjs.org/firebase-admin/-/firebase-admin-11.9.0.tgz"
+  integrity sha512-My7qrInVZFmImX8aTulrp9kgY6d88Wn+ie8UIXKzZ3SJqQQhDwFT7Q3pgQXK9RfdsUtcxJJ3rCK7MWBm4GGtuw==
   dependencies:
     "@fastify/busboy" "^1.2.1"
     "@firebase/database-compat" "^0.3.4"
@@ -1270,7 +1270,7 @@ firebase-admin@^11.8.0:
     node-forge "^1.3.1"
     uuid "^9.0.0"
   optionalDependencies:
-    "@google-cloud/firestore" "^6.5.0"
+    "@google-cloud/firestore" "^6.6.0"
     "@google-cloud/storage" "^6.9.5"
 
 firebase@^9.22.1:
