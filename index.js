@@ -45,7 +45,7 @@ app.get('/api/checkUser/:id', async (req, res) => {
     const { id } = req.params;
 
     // Firestore 'users' 컬렉션에서 사용자 ID에 해당하는 문서 가져오기
-    const snapshot = await firestore.collection('users').where('id', '==', id).get();
+    const snapshot = await firestore.collection('user').where('id', '==', id).get();
 
     if (snapshot.empty) {
       res.json({ success: false, message: 'User does not exist' });
