@@ -26,14 +26,15 @@
         const data = await response.json();
         const reply = data.reply;
 
-        // 개행 문자를 <br> 태그로 대체
-        const formattedReply = reply.replace(/(\d+)\s+층/g, '$1&nbsp;층');
-
-        // 공백을 &nbsp;로 변환
-        const finalReply = formattedReply.replace(/\n/g, '<br>');
-
-        responseDiv.innerHTML = finalReply;
+        // 캐릭터 정보를 출력
+        responseDiv.innerHTML = `
+          <p>닉네임: ${reply.nickname}</p>
+          <p>레벨: ${reply.level}</p>
+          <p>직업: ${reply.job}</p>
+          <p>월드: ${reply.world}</p>
+        `;
       });
     </script>
   </body>
 </html>
+

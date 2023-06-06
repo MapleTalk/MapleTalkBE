@@ -2,6 +2,7 @@ const express = require('express');
 const axios = require('axios');
 const cheerio = require('cheerio');
 const cors = require('cors');
+const url = require('url'); // 'url' 모듈 불러오기 추가
 
 const app = express();
 const port = 3002;
@@ -18,20 +19,16 @@ app.get('/chat', async (req, res) => {
 
     let response;
     if (command === '!정보') {
+      // character 정보 가져오기
       response = await getUserInfo(param);
     } else if (command === '!길드') {
-      response = await getGuildInfo(param);
+      response = '길드 정보 요청';
     } else {
       response = '잘못된 명령입니다.';
     }
-    res.json({ 
-      reply: {
-        nickname: character,
-        level: levelData,
-        job: jobData,
-        world: worldData
-      }
-    });
+
+    // 결과 반환
+    res.json({ reply: response }); // response를 직접 반환
   } else {
     res.json({ reply: '잘못된 명령입니다.' });
   }
@@ -39,22 +36,37 @@ app.get('/chat', async (req, res) => {
 
 // 유저데이터를 가져오는 함수
 async function getUserInfo(character) {
+  const websiteUrl = `https://maplestory.nexon.com/N23Ranking/World/Total?c=${encodeURIComponent(character)}`;
+
   try {
-    const websiteUrl = `https://maple.gg/u/${character}`;
+    // 첫 번째 요청으로 페이지 접근
+    const response1 = await axios.get(websiteUrl);
+    const $ = cheerio.load(response1.data);
 
-    const response = await axios.get(websiteUrl);
-    const html = response.data;
+    // 해당 테이블 구조에서 a 태그의 href 속성을 찾습니다.
+    let hyperlink = $('tr.search_com_chk dl dt a').attr('href');
 
-    const $ = cheerio.load(html);
+    // 절대 URL을 보장하기 위해 url.resolve 사용
+    hyperlink = url.resolve(websiteUrl, hyperlink);
 
-    // 원하는 데이터를 추출하는 로직을 구현합니다.
-    const levelData = $('#user-profile > section > div.row.row-normal > div.col-lg-8 > div > div.user-summary > ul > li:nth-child(1)').text().trim();
-    const jobData = $('#user-profile > section > div.row.row-normal > div.col-lg-8 > div > div.user-summary > ul > li:nth-child(2)').text().trim();
-    const mureung = $('#app > div.card.border-bottom-0 > div > section > div.row.text-center > div:nth-child(1) > section > div > div.pt-4.pt-sm-3.pb-4 > div > h1').text().trim();
+    // 찾은 하이퍼링크로 두 번째 요청 보내기
+    const response2 = await axios.get(hyperlink);
+    const $$ = cheerio.load(response2.data);
 
-    return `닉네임: ${character}\n레벨: ${levelData}\n직업: ${jobData}\n무릉: ${mureung}`;
+    // 두 번째 요청의 결과에서 'dd' 태그를 통해 필요한 정보 추출
+    const levelData = $$('div.char_info dl:nth-child(1) dd').text().trim();
+    const jobData = $$('div.char_info dl:nth-child(2) dd').text().trim();
+    const worldData = $$('div.char_info dl:nth-child(3) dd').text().trim();
+
+    // 추출한 정보를 객체로 반환
+    return {
+      nickname: character,
+      level: levelData,
+      job: jobData,
+      world: worldData
+    };
   } catch (error) {
-    console.log('Error:', error);
+    console.error('Error:', error);
     return '웹 스크래핑 실패';
   }
 }
