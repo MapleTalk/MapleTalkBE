@@ -66,7 +66,7 @@ app.post('/api/register', async (req, res) => {
     const { id, email, name } = req.body;
 
     // Firestore 'users' 컬렉션에 새로운 문서 생성
-    const docRef = await firestore.collection('users').add({
+    const docRef = await firestore.collection('user').add({
       id,
       email,
       name,
