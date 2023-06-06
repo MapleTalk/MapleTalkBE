@@ -19,10 +19,10 @@ const app = express();
 app.use(bodyParser.json());
 
 // GET API 엔드포인트 - 사용자 목록 가져오기
-app.get('/api/test', async (req, res) => {
+app.get('/api/users', async (req, res) => {
   try {
     // Firestore 'users' 컬렉션에서 모든 문서 가져오기
-    const snapshot = await firestore.collection('test').get();
+    const snapshot = await firestore.collection('user').get();
 
     // 문서 데이터 추출
     const users = [];
@@ -37,6 +37,28 @@ app.get('/api/test', async (req, res) => {
     res.status(500).json({ success: false, message: 'Error fetching user data' });
   }
 });
+
+// GET API 엔드포인트 - 사용자 존재 여부 확인
+app.get('/api/checkUser/:id', async (req, res) => {
+  try {
+    // 파라미터에서 사용자 ID 가져오기
+    const { id } = req.params;
+
+    // Firestore 'users' 컬렉션에서 사용자 ID에 해당하는 문서 가져오기
+    const snapshot = await firestore.collection('users').where('id', '==', id).get();
+
+    if (snapshot.empty) {
+      res.json({ success: false, message: 'User does not exist' });
+    } else {
+      res.json({ success: true, message: 'User exists' });
+    }
+  } catch (error) {
+    console.error('Error fetching user data:', error);
+    res.status(500).json({ success: false, message: 'Error fetching user data' });
+  }
+});
+
+
 
 // POST API 엔드포인트 - 사용자 정보 저장
 app.post('/api/register', async (req, res) => {
