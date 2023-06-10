@@ -1,22 +1,22 @@
 // 필요한 모듈들을 불러옵니다.
-const express = require('express');
-const axios = require('axios');
-const cheerio = require('cheerio');
-const cors = require('cors');
-const url = require('url');
-const admin = require('firebase-admin');
-const serviceAccount = require('../config/serviceAccountKey.json');
-const crypto = require('crypto');
-const { Storage } = require('@google-cloud/storage');
+import express from 'express';
+import { get } from 'axios';
+import { load } from 'cheerio';
+import cors from 'cors';
+import { resolve as _resolve } from 'url';
+import { initializeApp, credential as _credential, firestore } from 'firebase-admin';
+import serviceAccount from '../config/serviceAccountKey.json';
+import { createHash } from 'crypto';
+import { Storage } from '@google-cloud/storage';
 
 const app = express();
 const port = 3002;
 
-admin.initializeApp({
-  credential: admin.credential.cert(serviceAccount)
+initializeApp({
+  credential: _credential.cert(serviceAccount)
 });
 
-let db = admin.firestore();
+let db = firestore();
 
 const storage = new Storage({
   projectId: 'mapletalk-c0c99',
@@ -56,7 +56,7 @@ app.get('/chat', async (req, res) => {
 });
 
 async function getOrAddUserInfo(character) {
-  const hash = crypto.createHash('sha256');
+  const hash = createHash('sha256');
   hash.update(character);
   const docId = hash.digest('hex');
 
@@ -79,17 +79,17 @@ async function getOrAddUserInfo(character) {
 async function scrapeUserInfo(character) {
   const websiteUrl = `https://maplestory.nexon.com/N23Ranking/World/Total?c=${encodeURIComponent(character)}`;
 
-  const response1 = await axios.get(websiteUrl);
-  const $ = cheerio.load(response1.data);
+  const response1 = await get(websiteUrl);
+  const $ = load(response1.data);
 
   let hyperlink = $('tr.search_com_chk dl dt a').attr('href');
   if (!hyperlink) {
     return null;
   }
-  hyperlink = url.resolve(websiteUrl, hyperlink);
+  hyperlink = _resolve(websiteUrl, hyperlink);
 
-  const response2 = await axios.get(hyperlink);
-  const $$ = cheerio.load(response2.data);
+  const response2 = await get(hyperlink);
+  const $$ = load(response2.data);
 
   const levelData = $$('div.char_info dl:nth-child(1) dd').text().trim();
   const jobData = $$('div.char_info dl:nth-child(2) dd').text().trim();
@@ -126,14 +126,14 @@ async function scrapeUserInfo(character) {
 
 async function uploadImageToFirebase(imageUrl, character) {
   return new Promise((resolve, reject) => {
-    const hash = crypto.createHash('sha256');
+    const hash = createHash('sha256');
     hash.update(character);
     const fileName = hash.digest('hex');
     const bucket = storage.bucket('mapletalk-c0c99.appspot.com');
     const file = bucket.file(`character/${fileName}`);
     const writeStream = file.createWriteStream();
 
-    axios.get(imageUrl, { responseType: 'stream' })
+    get(imageUrl, { responseType: 'stream' })
       .then(response => {
         response.data.pipe(writeStream);
 
