@@ -2,16 +2,16 @@ import express from 'express';
 import {
   getChat,
   sendChat,
-  createChatRoom,
+  getOrCreateChatRoom,
   modifyChatRoomInfo,
   getUserChats
-} from '../controllers/chatsController.js';
+} from '../controllers/chatController.js';
 
 const router = express.Router();
 
 router.get('/getChat/:roomId', getChat);
 router.post('/sendChat', sendChat);
-router.post('/createChatRoom', createChatRoom);
+router.post('/getOrCreateChatRoom', getOrCreateChatRoom);
 router.put('/modifyChatRoomInfo/:roomId', modifyChatRoomInfo);
 router.get('/getUserChats/:userId', getUserChats);
 
