@@ -9,18 +9,29 @@
     <form method="GET" action="http://localhost:3002/chat">
       <input type="text" name="message"/>
       <button type="submit">Send</button>
-    </form>
-
+    </form><br>
+      <button id="allupdate">모든유저 갱신</button>&nbsp;&nbsp;&nbsp;
+      <button id="update">검색유저 갱신</button>
     <div id="response"></div>
 
     <script>
       const form = document.querySelector('form');
       const responseDiv = document.getElementById('response');
+      const updateButton = document.getElementById('update');
+      const allupdateButton = document.getElementById('allupdate');
+
+      let lastCharacter = null;
+
 
       form.addEventListener('submit', async (event) => {
         event.preventDefault();
         const formData = new FormData(form);
         const message = formData.get('message');
+
+        // 사용자가 '!정보 캐릭터이름' 형태로 입력
+        if (message.startsWith('!정보')) {
+        lastCharacter = message.split(' ')[1];
+        }
 
         const response = await fetch(`http://localhost:3002/chat?message=${message}`);
         const data = await response.json();
@@ -36,7 +47,20 @@
           <img src="${reply.image}" alt="캐릭터 이미지">
         `;
       });
-      // 김민철 병신
+
+      updateButton.addEventListener('click', async () => {
+        if (lastCharacter !== null) {
+          await fetch(`http://localhost:3002/update/${lastCharacter}`, { method: 'POST' });
+          alert(`${lastCharacter}의 정보가 갱신되었습니다.`);
+        } else {
+          alert('갱신할 캐릭터 정보가 없습니다.');
+        }
+      });
+
+      allupdateButton.addEventListener('click', async () => {
+        await fetch(`http://localhost:3002/allupdate`, { method: 'POST' });
+        alert('모든 정보가 갱신되었습니다.');
+      });
     </script>
   </body>
 </html>

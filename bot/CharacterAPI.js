@@ -1,22 +1,25 @@
 // 필요한 모듈들을 불러옵니다.
-import express from 'express';
-import { get } from 'axios';
-import { load } from 'cheerio';
-import cors from 'cors';
-import { resolve as _resolve } from 'url';
-import { initializeApp, credential as _credential, firestore } from 'firebase-admin';
-import serviceAccount from '../config/serviceAccountKey.json';
-import { createHash } from 'crypto';
-import { Storage } from '@google-cloud/storage';
+const express = require('express');
+const axios = require('axios');
+const cheerio = require('cheerio');
+const cors = require('cors');
+const url = require('url');
+const admin = require('firebase-admin');
+const serviceAccount = require('../config/serviceAccountKey.json');
+const crypto = require('crypto');
+const { Storage } = require('@google-cloud/storage');
+const schedule = require('node-schedule');
 
 const app = express();
 const port = 3002;
 
-initializeApp({
-  credential: _credential.cert(serviceAccount)
+app.use(express.json());
+
+admin.initializeApp({
+  credential: admin.credential.cert(serviceAccount)
 });
 
-let db = firestore();
+let db = admin.firestore();
 
 const storage = new Storage({
   projectId: 'mapletalk-c0c99',
@@ -55,8 +58,41 @@ app.get('/chat', async (req, res) => {
   }
 });
 
+app.post('/allupdate', async (req, res) => {
+  // 데이터베이스에서 모든 유저 정보를 가져옴
+  const snapshot = await db.collection('userInfo').get();
+  
+  // 각 유저에 대해 정보를 스크랩하고 데이터베이스에 저장
+  snapshot.forEach(async doc => {
+    const character = doc.data().nickname;
+    const userInfo = await scrapeUserInfo(character);
+    
+    // 스크랩한 정보를 데이터베이스에 업데이트
+    await db.collection('userInfo').doc(doc.id).set(userInfo);
+  });
+
+  res.status(200).send('모든 정보가 갱신되었습니다.');
+});
+
+app.post('/update/:character', async (req, res) => {
+  // URL에서 캐릭터 이름을 가져옴
+  const character = req.params.character;
+
+  // 해당 캐릭터에 대한 정보를 스크래핑하고 데이터베이스에 저장
+  const userInfo = await scrapeUserInfo(character);
+  if (userInfo === null) {
+    res.status(400).send(`Failed to update information for ${character}`);
+  } else {
+    const hash = crypto.createHash('sha256');
+    hash.update(character);
+    const docId = hash.digest('hex');
+    await db.collection('userInfo').doc(docId).set(userInfo);
+    res.status(200).send(`${character} has been updated.`);
+  }
+});
+
 async function getOrAddUserInfo(character) {
-  const hash = createHash('sha256');
+  const hash = crypto.createHash('sha256');
   hash.update(character);
   const docId = hash.digest('hex');
 
@@ -79,17 +115,17 @@ async function getOrAddUserInfo(character) {
 async function scrapeUserInfo(character) {
   const websiteUrl = `https://maplestory.nexon.com/N23Ranking/World/Total?c=${encodeURIComponent(character)}`;
 
-  const response1 = await get(websiteUrl);
-  const $ = load(response1.data);
+  const response1 = await axios.get(websiteUrl);
+  const $ = cheerio.load(response1.data);
 
   let hyperlink = $('tr.search_com_chk dl dt a').attr('href');
   if (!hyperlink) {
     return null;
   }
-  hyperlink = _resolve(websiteUrl, hyperlink);
+  hyperlink = url.resolve(websiteUrl, hyperlink);
 
-  const response2 = await get(hyperlink);
-  const $$ = load(response2.data);
+  const response2 = await axios.get(hyperlink);
+  const $$ = cheerio.load(response2.data);
 
   const levelData = $$('div.char_info dl:nth-child(1) dd').text().trim();
   const jobData = $$('div.char_info dl:nth-child(2) dd').text().trim();
@@ -123,17 +159,16 @@ async function scrapeUserInfo(character) {
   return userInfo;
 }
 
-
 async function uploadImageToFirebase(imageUrl, character) {
   return new Promise((resolve, reject) => {
-    const hash = createHash('sha256');
+    const hash = crypto.createHash('sha256');
     hash.update(character);
     const fileName = hash.digest('hex');
     const bucket = storage.bucket('mapletalk-c0c99.appspot.com');
     const file = bucket.file(`character/${fileName}`);
     const writeStream = file.createWriteStream();
 
-    get(imageUrl, { responseType: 'stream' })
+    axios.get(imageUrl, { responseType: 'stream' })
       .then(response => {
         response.data.pipe(writeStream);
 
@@ -145,22 +180,49 @@ async function uploadImageToFirebase(imageUrl, character) {
             expires: '03-17-2025'
           };
 
-          const url = await file.getSignedUrl(config);
-
-          resolve(url[0]);
+          try {
+            const url = await file.getSignedUrl(config);
+            resolve(url[0]);
+          } catch (error) {
+            console.error('Error occurred while generating signed URL:', error);
+            reject(error);
+          }
         });
 
         writeStream.on('error', (error) => {
           console.error('Error occurred while uploading image to Firebase:', error);
-          reject(null);
+          reject(error);
         });
       })
       .catch(error => {
         console.error('Error occurred while downloading image:', error);
-        reject(null);
+        reject(error);
       });
   });
 }
+
+
+// 자정마다 실행되는 스케줄을 설정합니다.
+schedule.scheduleJob('0 0 * * *', async function() {
+  console.log('Updating all user info... at 00:00');
+
+  // Firestore에서 모든 사용자 정보를 불러옵니다.
+  const usersSnapshot = await db.collection('userInfo').get();
+
+  // 각 사용자에 대해 웹 크롤링을 실행하고 결과를 Firestore에 저장합니다.
+  usersSnapshot.forEach(async (doc) => {
+    const character = doc.data().nickname;
+    const userInfo = await scrapeUserInfo(character);
+
+    // scrapeUserInfo가 null을 반환하면 해당 사용자의 정보를 업데이트하지 않습니다.
+    if (userInfo !== null) {
+      console.log(`Updating ${character}...`);
+      await db.collection('userInfo').doc(doc.id).set(userInfo);
+    }
+  });
+
+  console.log('Update complete.');
+});
 
 app.listen(port, () => {
   console.log(`App is listening at http://localhost:${port}`);
