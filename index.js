@@ -16,10 +16,13 @@ async function startApp() {
   // 라우터 생성
   const chatRouter = express.Router();
   const userRouter = express.Router();
+  const characterRouter = express.Router();
 
   // 라우터에 미들웨어 연결
   const chatController = require('./controllers/chatController.js');
   const userController = require('./controllers/userController.js');
+  const characterController = require('./controllers/characterController.js');
+
   chatRouter.get('/getChat/:roomId', chatController.getChat);
   chatRouter.post('/sendChat', chatController.sendChat);
   chatRouter.post('/getOrCreateChatRoom', chatController.getOrCreateChatRoom);
@@ -30,8 +33,11 @@ async function startApp() {
   userRouter.get('/checkUser/:id', userController.checkUser);
   userRouter.post('/register', userController.registerUser);
 
+  characterRouter.get('/:token', characterController.getInfo);
+
   app.use('/api/chats', chatRouter);
   app.use('/api/users', userRouter);
+  app.use('/api/info', characterRouter);
   app.use(errorHandler); // Use errorHandler
 
   app.listen(port, () => {

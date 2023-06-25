@@ -6,11 +6,11 @@
   <body>
     <h1>Test Chatbot</h1>
 
-    <form method="GET" action="http://localhost:3002/chat">
+    <form method="GET" action="http://localhost:3000/api/info">
       <input type="text" name="message"/>
       <button type="submit">Send</button>
     </form><br>
-      <button id="allupdate">모든유저 갱신</button>&nbsp;&nbsp;&nbsp;
+      <button id="allupdate">모든유저 갱신</button>
       <button id="update">검색유저 갱신</button>
     <div id="response"></div>
 
@@ -33,7 +33,7 @@
         lastCharacter = message.split(' ')[1];
         }
 
-        const response = await fetch(`http://localhost:3002/chat?message=${message}`);
+        const response = await fetch(`http://localhost:3000/api/info/${message}`);
         const data = await response.json();
         const reply = data.reply;
 
@@ -46,20 +46,6 @@
           <p>경험치: ${reply.experience}</p>
           <img src="${reply.image}" alt="캐릭터 이미지">
         `;
-      });
-
-      updateButton.addEventListener('click', async () => {
-        if (lastCharacter !== null) {
-          await fetch(`http://localhost:3002/update/${lastCharacter}`, { method: 'POST' });
-          alert(`${lastCharacter}의 정보가 갱신되었습니다.`);
-        } else {
-          alert('갱신할 캐릭터 정보가 없습니다.');
-        }
-      });
-
-      allupdateButton.addEventListener('click', async () => {
-        await fetch(`http://localhost:3002/allupdate`, { method: 'POST' });
-        alert('모든 정보가 갱신되었습니다.');
       });
     </script>
   </body>
