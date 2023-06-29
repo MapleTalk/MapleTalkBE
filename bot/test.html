@@ -1,52 +1,37 @@
 <!DOCTYPE html>
 <html>
-  <head>
-    <title>Test Chatbot</title>
-  </head>
-  <body>
-    <h1>Test Chatbot</h1>
-
-    <form method="GET" action="http://localhost:3000/api/info">
-      <input type="text" name="message"/>
-      <button type="submit">Send</button>
-    </form><br>
-      <button id="allupdate">모든유저 갱신</button>
-      <button id="update">검색유저 갱신</button>
-    <div id="response"></div>
+<head>
+    <title>Test Sunday API</title>
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
+</head>
+<body>
+    <h1>Test Sunday API</h1>
+    <button id="btnTest">!썬데이 입력</button>
+    <p id="result"></p>
+    <img id="resultImage" src="" alt="Image will be displayed here">
 
     <script>
-      const form = document.querySelector('form');
-      const responseDiv = document.getElementById('response');
-      const updateButton = document.getElementById('update');
-      const allupdateButton = document.getElementById('allupdate');
-
-      let lastCharacter = null;
-
-
-      form.addEventListener('submit', async (event) => {
-        event.preventDefault();
-        const formData = new FormData(form);
-        const message = formData.get('message');
-
-        // 사용자가 '!정보 캐릭터이름' 형태로 입력
-        if (message.startsWith('!정보')) {
-        lastCharacter = message.split(' ')[1];
-        }
-
-        const response = await fetch(`http://localhost:3000/api/info/${message}`);
-        const data = await response.json();
-        const reply = data.reply;
-
-        // 캐릭터 정보와 이미지를 출력
-        responseDiv.innerHTML = `
-          <p>닉네임: ${reply.nickname}</p>
-          <p>레벨: ${reply.level}</p>
-          <p>직업: ${reply.job}</p>
-          <p>월드: ${reply.world}</p>
-          <p>경험치: ${reply.experience}</p>
-          <img src="${reply.image}" alt="캐릭터 이미지">
-        `;
-      });
+        $(document).ready(function() {
+            $("#btnTest").click(function() {
+                var message = '!썬데이';
+                $.ajax({
+                    url: 'http://localhost:3002/sunday',
+                    type: 'GET',
+                    data: {
+                        message: message
+                    },
+                    success: function(response) {
+                        $("#result").html(JSON.stringify(response));
+                        if(response.reply && response.reply.image) {
+                            $("#resultImage").attr("src", response.reply.image);
+                        }
+                    },
+                    error: function(error) {
+                        console.log(error);
+                    }
+                });
+            });
+        });
     </script>
-  </body>
+</body>
 </html>

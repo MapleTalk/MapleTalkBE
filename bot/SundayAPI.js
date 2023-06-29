@@ -1,25 +1,24 @@
 // 필요한 모듈들을 불러옵니다.
-import express, { json } from 'express';
-import { get } from 'axios';
-import { load } from 'cheerio';
-import cors from 'cors';
-import { resolve as _resolve } from 'url';
-import { initializeApp, credential as _credential, firestore } from 'firebase-admin';
-import serviceAccount from '../config/serviceAccountKey.json';
-import { createHash } from 'crypto';
-import { Storage } from '@google-cloud/storage';
-import { scheduleJob } from 'node-schedule';
+const express = require('express');
+const axios = require('axios');
+const cheerio = require('cheerio');
+const cors = require('cors');
+const url = require('url');
+const admin = require('firebase-admin');
+const serviceAccount = require('../config/serviceAccountKey.json');
+const crypto = require('crypto');
+const {Storage} = require('@google-cloud/storage');
 
 const app = express();
 const port = 3002;
 
-app.use(json());
+app.use(express.json());
 
-initializeApp({
-  credential: _credential.cert(serviceAccount)
+admin.initializeApp({
+  credential: admin.credential.cert(serviceAccount)
 });
 
-let db = firestore();
+let db = admin.firestore();
 
 const storage = new Storage({
   projectId: 'mapletalk-c0c99',
@@ -30,27 +29,27 @@ app.use(cors());
 
 app.get('/sunday', async (req, res) => {
     const message = req.query.message;
-  
+
     // 'message'가 '!썬데이'인지 확인
     if (message === '!썬데이') {
       // 캐릭터 정보 가져오기
-      const sundayInfo = await getSundayInfo('캐릭터명'); 
+      const sundayInfo = await getSundayInfo('하이퍼 버닝'); 
       let response;
-  
+
       if (!sundayInfo) {
         response = { reply: '오류가 발생했습니다.' };
       } else {
         response = { reply: sundayInfo };
       }
-  
+
       res.json(response); 
     } else {
       res.json({ reply: '잘못된 명령입니다.' });
     }
-  });
+});
 
 async function getSundayInfo(sunday) { 
-  const hash = createHash('sha256');
+  const hash = crypto.createHash('sha256');
   hash.update(sunday);
   const docId = hash.digest('hex');
 
@@ -59,7 +58,7 @@ async function getSundayInfo(sunday) {
     console.log("문서가 존재하여 파이어베이스에서 받아옴");
     return doc.data();
   } else {
-    const sundayInfo = await scrapeSundayInfo(sunday);
+    const sundayInfo = await scrapeSundayMaple(sunday);
     if (!sundayInfo) {
       console.log("해당 정보를 찾을 수 없습니다.");
       return null;
@@ -70,33 +69,28 @@ async function getSundayInfo(sunday) {
   }
 }
 
-async function scrapeSundayMaple() {
+async function scrapeSundayMaple(sunday) {
     const websiteUrl = `https://maplestory.nexon.com/News/Event/Ongoing`;
   
-    const response1 = await get(websiteUrl);
-    const $ = load(response1.data);
+    const response1 = await axios.get(websiteUrl);
+    const $ = cheerio.load(response1.data);
   
-    // 'ul' 요소 내에 있는 'li' 요소를 선택
     let listItems = $('#container div.contents_wrap div.today_event div div ul li');
   
-    // 'li' 요소 중 '썬데이 메이플' 텍스트를 포함하는 요소만 선택
     let sundayMapleItems = listItems.filter((i, el) => {
-      return $(el).text().includes('썬데이 메이플');
+      return $(el).text().includes(sunday);
     });
   
-    // '썬데이 메이플' 항목이 없으면 null을 반환
     if (sundayMapleItems.length === 0) {
       return null;
     }
   
-    // 첫 번째 '썬데이 메이플' 항목의 링크를 가져옴
     let hyperlink = $(sundayMapleItems[0]).find('a').attr('href');
-    hyperlink = _resolve(websiteUrl, hyperlink);
+    hyperlink = url.resolve(websiteUrl, hyperlink);
   
-    const response2 = await get(hyperlink);
-    const $$ = load(response2.data);
+    const response2 = await axios.get(hyperlink);
+    const $$ = cheerio.load(response2.data);
   
-    // 경로를 업데이트합니다
     const imageSrc = $$('#container div.contents_wrap div.qs_text div div:nth-child(1) div img').attr('src');
   
     const sundayMapleInfo = {
@@ -104,7 +98,7 @@ async function scrapeSundayMaple() {
     };
   
     try {
-      const uploadedImageURL = await uploadImageToFirebase(imageSrc, "sundayInfo");
+      const uploadedImageURL = await uploadImageToFirebase(imageSrc, sunday);
       if (uploadedImageURL !== null) {
         sundayMapleInfo.image = uploadedImageURL;
         console.log('이미지가 저장되었습니다.');
@@ -116,20 +110,18 @@ async function scrapeSundayMaple() {
     }
   
     return sundayMapleInfo;
-  }
-  
-  
+}
 
 async function uploadImageToFirebase(imageUrl, sunday) {
   return new Promise((resolve, reject) => {
-    const hash = createHash('sha256');
+    const hash = crypto.createHash('sha256');
     hash.update(sunday);
     const fileName = hash.digest('hex');
     const bucket = storage.bucket('mapletalk-c0c99.appspot.com');
-    const file = bucket.file(`character/${fileName}`);
+    const file = bucket.file(`sundayInfo/${fileName}`);
     const writeStream = file.createWriteStream();
 
-    get(imageUrl, { responseType: 'stream' })
+    axios.get(imageUrl, { responseType: 'stream' })
       .then(response => {
         response.data.pipe(writeStream);
 
