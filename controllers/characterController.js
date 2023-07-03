@@ -6,8 +6,8 @@ const firestore = getFirestore();
 async function getCharcterInfo(character) {
   const hash = createHash('sha256');
   hash.update(character);
-  const docId = hash.digest('hex');
-
+  const docId = hash.digest('hex'); 
+  
   let doc = await firestore.collection('userInfo').doc(docId).get();
   if (doc.exists) {
       console.log("문서가 존재하여 파이어베이스에서 받아옴");

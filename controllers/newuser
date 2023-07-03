@@ -1,0 +1,26 @@
+import express, { json } from 'express';
+import { get } from 'axios';
+import { load } from 'cheerio';
+import cors from 'cors';
+import { resolve as _resolve } from 'url';
+import { initializeApp, credential as _credential, firestore } from 'firebase-admin';
+import serviceAccount from '../config/serviceAccountKey.json';
+import { createHash } from 'crypto';
+import { Storage } from '@google-cloud/storage';
+import { scheduleJob } from 'node-schedule';
+
+// firebase.js 파일에서 Firestore 인스턴스를 반환하는 함수를 가져옵니다.
+const { getFirestore, FieldValue } = require('../firebase.js');
+// Firestore 인스턴스를 가져옵니다.
+const firestore = getFirestore();
+
+// 이제 'firestore.collection'을 호출하면 함수를 반환해야 합니다.
+
+async function getUserInfo(id) {
+  const hash = createHash('sha256');
+  hash.update(id);
+  const docId = hash.digest('hex');
+
+  let doc = await firestore.collection('user').doc(docId).get();
+      return doc.data();
+}
